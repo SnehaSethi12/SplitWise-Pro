@@ -10,15 +10,21 @@ import { moneyToCents } from "@/lib/format";
 export async function loginAction(form: FormData) {
   const email = String(form.get("email") ?? "");
   const password = String(form.get("password") ?? "");
+
   await ensureBaseData();
+
   if (email === "admin@example.com" && password === "password") {
     cookies().set("splitwise_session", email, {
-  httpOnly: true,
-  sameSite: "lax",
-  path: "/",
-}););
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // keep user logged in for 7 days
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    });
+
     redirect("/");
   }
+
   redirect("/login?error=1");
 }
 export async function importBundledAction() {
