@@ -4,10 +4,28 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { readFile } from "fs/promises";
-import path from "path";
 import { importCsv } from "@/lib/importer";
 import { ensureBaseData, personId, prisma } from "@/lib/db";
 import { moneyToCents } from "@/lib/format";
+
+function refreshDemoSession() {
+  cookies().set("splitwise_session", "admin@example.com", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+  });
+}
+
+function revalidateMainPages() {
+  revalidatePath("/");
+  revalidatePath("/import");
+  revalidatePath("/expenses");
+  revalidatePath("/analytics");
+  revalidatePath("/members");
+  revalidatePath("/groups");
+}
 
 export async function loginAction(form: FormData) {
   const email = String(form.get("email") ?? "");
@@ -16,14 +34,7 @@ export async function loginAction(form: FormData) {
   await ensureBaseData();
 
   if (email === "admin@example.com" && password === "password") {
-    cookies().set("splitwise_session", email, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    });
-
+    refreshDemoSession();
     redirect("/");
   }
 
@@ -33,17 +44,12 @@ export async function loginAction(form: FormData) {
 export async function importBundledAction() {
   await ensureBaseData();
 
-  const csvPath = path.join(process.cwd(), "data", "expenses_export.csv");
-  const text = await readFile(csvPath, "utf8");
+  const text = await readFile("data/expenses_export.csv", "utf8");
 
   await importCsv(text, "data/expenses_export.csv");
 
-  revalidatePath("/");
-  revalidatePath("/import");
-  revalidatePath("/expenses");
-  revalidatePath("/analytics");
-  revalidatePath("/members");
-  revalidatePath("/groups");
+  refreshDemoSession();
+  revalidateMainPages();
 
   redirect("/import?imported=1");
 }
@@ -57,14 +63,23 @@ export async function importUploadAction(form: FormData) {
     await importCsv(await file.text(), file.name);
   }
 
-  revalidatePath("/");
-  revalidatePath("/import");
-  revalidatePath("/expenses");
-  revalidatePath("/analytics");
-  revalidatePath("/members");
-  revalidatePath("/groups");
+  refreshDemoSession();
+  revalidateMainPages();
 
   redirect("/import?imported=1");
+}
+
+export async function resetImportedDataAction() {
+  await prisma.anomaly.deleteMany();
+  await prisma.importReport.deleteMany();
+  await prisma.expenseShare.deleteMany();
+  await prisma.expense.deleteMany();
+  await prisma.settlement.deleteMany();
+
+  refreshDemoSession();
+  revalidateMainPages();
+
+  redirect("/import?reset=1");
 }
 
 export async function createGroupAction(form: FormData) {
@@ -76,7 +91,9 @@ export async function createGroupAction(form: FormData) {
     });
   }
 
+  refreshDemoSession();
   revalidatePath("/groups");
+
   redirect("/groups");
 }
 
@@ -99,6 +116,7 @@ export async function addMembershipAction(form: FormData) {
     });
   }
 
+  refreshDemoSession();
   revalidatePath("/groups");
   revalidatePath("/members");
 
@@ -118,6 +136,7 @@ export async function updateMembershipAction(form: FormData) {
     });
   }
 
+  refreshDemoSession();
   revalidatePath("/groups");
   revalidatePath("/members");
 
@@ -146,6 +165,7 @@ export async function recordSettlementAction(form: FormData) {
     });
   }
 
+  refreshDemoSession();
   revalidatePath("/");
   revalidatePath("/expenses");
   revalidatePath("/analytics");
