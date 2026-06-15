@@ -1,23 +1,45 @@
-# AI Usage
+AI Usage
+This project used AI as a development assistant, not as a replacement for engineering decisions. I used it mainly to speed up requirement extraction, compare implementation options, review edge cases in the CSV, and get feedback on code/documentation structure. I remained responsible for the final policies, schema, importer behavior, balance calculation, and UI decisions submitted in the repository.
 
-## Tools used
+AI tools used
+Arena.ai Agent Mode
+Where AI helped
+Summarizing the assignment requirements from the PDF.
+Listing possible CSV anomaly categories to check manually.
+Brainstorming data-cleaning policies for ambiguous rows.
+Reviewing the database schema and suggesting table relationships.
+Suggesting UI organization for dashboard, import report, expenses, members, and analytics pages.
+Helping draft documentation outlines, which I then adjusted for the final project.
+Key prompts / instructions
+Examples of prompts I used:
 
-Arena.ai Agent Mode was used to:
+"Read the assignment and identify the required deliverables."
+"Inspect this expenses CSV and list possible data anomalies."
+"Suggest a relational schema for expenses, expense shares, settlements, and import reports."
+"Help review this balance calculation for edge cases."
+"Suggest how to explain this code in a live interview."
+Important decisions I made and verified
+Use a relational schema with Expense, ExpenseShare, Settlement, ImportReport, and Anomaly tables.
+Store money as integer paise instead of floating-point values.
+Treat USD rows using a documented fixed FX rate instead of mixing currencies silently.
+Treat repayment/deposit rows as settlements, not expenses.
+Track membership dates so Sam is not charged before joining and Meera is not charged after leaving.
+Surface every import anomaly instead of silently changing the data.
+Cases where AI suggestions needed correction
+Date ambiguity
+AI initially suggested parsing dates directly. I changed the policy to explicitly parse the file as DD-MM-YYYY, flag 04-05-2026 as ambiguous, and document the decision.
 
-- Read the PDF assignment and extract requirements.
-- Inspect the attached CSV and identify messy-data cases.
-- Draft a simple Python/SQLite implementation.
-- Generate documentation files and an import report.
+Currency handling
+A simple implementation could accidentally add USD values as if they were INR. I added an explicit USD-to-INR conversion policy and anomaly entries for foreign-currency rows.
 
-## Key prompts / instructions
+Settlements vs expenses
+Rows like Rohan paid Aisha back and Sam deposit share should not create expense shares. I imported them as Settlement records so they affect balances without inflating spending totals.
 
-- "Read the assignment file and do the task provided using the data expenses export.csv."
-- Internal follow-up: inspect CSV rows, infer anomaly policies, and implement an auditable importer.
+Membership changes
+A naive split across all known members would incorrectly charge Sam for March and Meera for April. I added membership intervals and importer checks for inactive members.
 
-## Cases where AI output needed correction
+Money precision
+Some draft logic used normal decimal arithmetic. I changed the database model to store all final amounts as integer paise and handle rounding deterministically.
 
-1. **Date ambiguity**: An initial approach could silently parse `04-05-2026` with the host locale. I corrected this by explicitly documenting DD-MM-YYYY and logging an `AMBIGUOUS_DATE` anomaly.
-2. **USD handling**: A naive balance calculator might add USD amounts as if they were rupees. I added a fixed FX policy and anomaly entries for every foreign-currency row.
-3. **Settlements**: A first pass could treat "Rohan paid Aisha back" and "Sam deposit share" as group expenses. I changed these rows to import into `settlements`, affecting balances without creating shares.
-4. **Membership changes**: It is easy to split all expenses across all known people. I added membership intervals and a rule that removes Meera from stale April household splits while not charging Sam for March rows.
-5. **Floating point money**: AI-generated examples often use floats. I used `Decimal` during import and integer paise in the database.
+Final note
+AI was used as a collaborator for speed and review. The final submitted behavior, anomaly policies, schema, and balance logic were reviewed and documented by me.
