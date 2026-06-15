@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  email        String @unique
+  passwordHash String
+}
+
+model Group {
+  id          Int               @id @default(autoincrement())
+  name        String
+  memberships GroupMembership[]
+  expenses    Expense[]
+  settlements Settlement[]
+}
+
+model Person {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  memberships     GroupMembership[]
+  paidExpenses    Expense[]         @relation("ExpensePayer")
+  shares          ExpenseShare[]
+  settlementsPaid Settlement[]       @relation("SettlementPayer")
+  settlementsGot  Settlement[]       @relation("SettlementPayee")
+}
+
+model GroupMembership {
+  id       Int    @id @default(autoincrement())
+  groupId  Int
+  personId Int
+  joinedOn String
+  leftOn   String?
+  group    Group  @relation(fields: [groupId], references: [id])
+  person   Person @relation(fields: [personId], references: [id])
+}
+
+model Expense {
+  id              Int            @id @default(autoincrement())
+  groupId         Int
+  rowNumber       Int?
+  expenseDate     String
+  description     String
+  paidById        Int
+  amountInrCents  Int
+  originalAmount  String?
+  originalCurrency String?
+  splitType       String
+  rawJson         String?
+  group           Group          @relation(fields: [groupId], references: [id])
+  paidBy          Person         @relation("ExpensePayer", fields: [paidById], references: [id])
+  shares          ExpenseShare[]
+}
+
+model ExpenseShare {
+  id             Int     @id @default(autoincrement())
+  expenseId      Int
+  personId       Int
+  shareInrCents  Int
+  expense        Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  person         Person  @relation(fields: [personId], references: [id])
+}
+
+model Settlement {
+  id             Int    @id @default(autoincrement())
+  groupId        Int
+  rowNumber      Int?
+  settlementDate String
+  payerId        Int
+  payeeId        Int
+  amountInrCents Int
+  note           String?
+  group          Group  @relation(fields: [groupId], references: [id])
+  payer          Person @relation("SettlementPayer", fields: [payerId], references: [id])
+  payee          Person @relation("SettlementPayee", fields: [payeeId], references: [id])
+}
+
+model ImportReport {
+  id                  Int       @id @default(autoincrement())
+  filename            String?
+  importedAt          String
+  rowsSeen            Int
+  expensesImported    Int
+  settlementsImported Int
+  rowsSkipped         Int
+  anomalies           Anomaly[]
+}
+
+model Anomaly {
+  id        Int          @id @default(autoincrement())
+  reportId  Int
+  rowNumber Int?
+  severity  String
+  code      String
+  message   String
+  action    String
+  rawJson   String?
+  report    ImportReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
