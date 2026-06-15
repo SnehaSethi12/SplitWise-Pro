@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { readFile } from "fs/promises";
+import path from "path";
 import { importCsv } from "@/lib/importer";
 import { ensureBaseData, personId, prisma } from "@/lib/db";
 import { moneyToCents } from "@/lib/format";
@@ -19,7 +20,7 @@ export async function loginAction(form: FormData) {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // keep user logged in for 7 days
+      maxAge: 60 * 60 * 24 * 7,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
 
@@ -30,21 +31,40 @@ export async function loginAction(form: FormData) {
 }
 
 export async function importBundledAction() {
-  const text = await readFile("data/expenses_export.csv", "utf8");
+  await ensureBaseData();
+
+  const csvPath = path.join(process.cwd(), "data", "expenses_export.csv");
+  const text = await readFile(csvPath, "utf8");
 
   await importCsv(text, "data/expenses_export.csv");
 
-  redirect("/import");
+  revalidatePath("/");
+  revalidatePath("/import");
+  revalidatePath("/expenses");
+  revalidatePath("/analytics");
+  revalidatePath("/members");
+  revalidatePath("/groups");
+
+  redirect("/import?imported=1");
 }
 
 export async function importUploadAction(form: FormData) {
+  await ensureBaseData();
+
   const file = form.get("csvfile") as File | null;
 
-  if (file) {
+  if (file && file.size > 0) {
     await importCsv(await file.text(), file.name);
   }
 
-  redirect("/import");
+  revalidatePath("/");
+  revalidatePath("/import");
+  revalidatePath("/expenses");
+  revalidatePath("/analytics");
+  revalidatePath("/members");
+  revalidatePath("/groups");
+
+  redirect("/import?imported=1");
 }
 
 export async function createGroupAction(form: FormData) {
@@ -81,6 +101,7 @@ export async function addMembershipAction(form: FormData) {
 
   revalidatePath("/groups");
   revalidatePath("/members");
+
   redirect("/groups");
 }
 
@@ -99,10 +120,13 @@ export async function updateMembershipAction(form: FormData) {
 
   revalidatePath("/groups");
   revalidatePath("/members");
+
   redirect("/groups");
 }
 
 export async function recordSettlementAction(form: FormData) {
+  await ensureBaseData();
+
   const payer = String(form.get("payer") ?? "");
   const payee = String(form.get("payee") ?? "");
   const amount = Number(String(form.get("amount") ?? "0").replace(/,/g, ""));
@@ -125,6 +149,7 @@ export async function recordSettlementAction(form: FormData) {
   revalidatePath("/");
   revalidatePath("/expenses");
   revalidatePath("/analytics");
+  revalidatePath("/person");
 
   redirect("/");
 }
