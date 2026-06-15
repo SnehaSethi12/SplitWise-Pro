@@ -13,10 +13,10 @@ export async function loginAction(form: FormData) {
   await ensureBaseData();
   if (email === "admin@example.com" && password === "password") {
     cookies().set("splitwise_session", email, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-    });
+  httpOnly: true,
+  sameSite: "lax",
+  path: "/",
+}););
     redirect("/");
   }
   redirect("/login?error=1");
