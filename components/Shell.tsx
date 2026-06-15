@@ -49,7 +49,9 @@ export function Shell({
         <Link className="nav-item" href="/decisions">
           Decisions
         </Link>
-
+        <Link className="nav-item" href="/submission">
+          Submission
+        </Link>
         <Link className="nav-item logout" href="/logout">
           Logout
         </Link>
