@@ -17,26 +17,39 @@ export function Shell({
             <small>simple shared expenses</small>
           </div>
         </div>
+
         <div className="nav-label">Main</div>
+
         <Link className="nav-item" href="/">
           Overview
         </Link>
+
         <Link className="nav-item" href="/analytics">
           Insights
         </Link>
+
         <Link className="nav-item" href="/import">
           Import
         </Link>
+
+        <Link className="nav-item" href="/groups">
+          Groups
+        </Link>
+
         <div className="nav-label">Details</div>
+
         <Link className="nav-item" href="/expenses">
           Expenses
         </Link>
+
         <Link className="nav-item" href="/members">
           People
         </Link>
+
         <Link className="nav-item" href="/decisions">
           Decisions
         </Link>
+
         <Link className="nav-item logout" href="/logout">
           Logout
         </Link>
@@ -48,6 +61,7 @@ export function Shell({
             <span className="eyebrow">SplitWise Pro</span>
             <h1>{title}</h1>
           </div>
+
           <nav className="section-nav" aria-label="Page sections">
             <a href="#summary">Summary</a>
             <a href="#visuals">Visuals</a>
@@ -60,10 +74,11 @@ export function Shell({
           <div className="hero-copy">
             <h2>{title}</h2>
             <p>
-              Review balances, inspect messy imports, and settle shared expenses
-              clearly.
+              Review balances, inspect messy imports, and settle shared
+              expenses clearly.
             </p>
           </div>
+
           <div className="hero-actions">
             <Link className="btn light" href="/">
               Overview
@@ -76,6 +91,7 @@ export function Shell({
             </Link>
           </div>
         </section>
+
         {children}
       </main>
     </div>
