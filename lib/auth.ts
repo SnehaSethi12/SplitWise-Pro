@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ensureBaseData } from "./db";
 
 export async function requireUser() {
@@ -6,7 +7,11 @@ export async function requireUser() {
 
   const session = cookies().get("splitwise_session")?.value;
 
+  if (session !== "admin@example.com") {
+    redirect("/login");
+  }
+
   return {
-    email: session || "admin@example.com",
+    email: session,
   };
 }
